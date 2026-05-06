@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bonvoy ポイント戦略ラボ</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#fff;--text:#0f172a;--muted:#475569;--line:#dbe3ef;--brand:#0f766e;--brand2:#1d4ed8;--good:#047857;--warn:#b45309;--bad:#b91c1c}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif}
+    .container{max-width:1240px;margin:18px auto;padding:0 14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 6px 20px rgba(15,23,42,.05)}
+    h1,h2,h3{margin:.2rem 0 .6rem} h1{font-size:1.5rem} h2{font-size:1.05rem} .muted{color:var(--muted);font-size:.9rem}
+    .layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px} .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px} .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    label{font-size:.86rem;font-weight:700;margin-bottom:4px;display:block} input,select,textarea,button{font:inherit}
+    input,select,textarea{width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff} textarea{min-height:72px;resize:vertical}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px} button{border:none;border-radius:8px;padding:9px 11px;font-weight:700;cursor:pointer}
+    .primary{background:var(--brand);color:#fff}.primary:hover{filter:brightness(.95)} .alt{background:#e2e8f0}
+    .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.kpi>div{border:1px solid var(--line);background:#f8fafc;border-radius:10px;padding:8px}.kpi .l{font-size:.75rem;color:var(--muted)}.kpi .v{font-weight:800;margin-top:2px}
+    .score{font-size:1.05rem;font-weight:900}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+    table{width:100%;border-collapse:collapse;font-size:.86rem} th,td{border-bottom:1px solid var(--line);padding:6px;text-align:left;white-space:nowrap} th{background:#eef2f7}
+    .scroll{overflow:auto}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .pill{padding:2px 8px;border-radius:999px;font-size:.78rem;background:#e2e8f0}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    @media(max-width:980px){.layout,.two-col,.grid,.grid3,.kpi{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="container">
+  <section class="card">
+    <h1>Bonvoy ポイント戦略ラボ</h1>
+    <p class="muted">還元率だけでなく、5泊目無料、獲得機会損失、購入ポイント比較、他プログラム比較、将来改悪リスク、年間運用まで多角的に分析。</p>
+    <div class="row">
+      <span class="pill">公開向け</span><span class="pill">完全フロントエンド</span><span class="pill">localStorage保存</span>
+    </div>
+  </section>
+
+  <div class="layout">
+    <section class="card">
+      <h2>1) 入力パネル</h2>
+      <div class="grid">
+        <div><label>ホテル名</label><input id="hotel" placeholder="例: ウェスティン都ホテル京都"></div>
+        <div><label>泊数</label><input id="nights" type="number" min="1" value="5"></div>
+        <div><label>現金総額（税サ込 円）</label><input id="cash" type="number" min="0" value="120000"></div>
+        <div><label>必要ポイント（合計 pt）</label><input id="pts" type="number" min="1" value="160000"></div>
+        <div><label>ポイント泊追加支払い（円）</label><input id="awardFee" type="number" min="0" value="0"></div>
+        <div><label>現金泊追加費用（円）</label><input id="cashExtra" type="number" min="0" value="0"></div>
+      </div>
+      <div class="grid3" style="margin-top:8px;">
+        <div><label>獲得率（pt/USD）</label><input id="earnRate" type="number" min="0" step="0.1" value="10"></div>
+        <div><label>自己価値（円/pt）</label><input id="myVal" type="number" min="0" step="0.01" value="0.9"></div>
+        <div><label>USDJPY</label><input id="fx" type="number" min="1" step="0.1" value="155"></div>
+        <div><label>代替価値（円/pt）</label><input id="altVal" type="number" min="0" step="0.01" value="0.8"></div>
+        <div><label>目標閾値（円/pt）</label><input id="target" type="number" min="0" step="0.01" value="0.9"></div>
+        <div><label>将来価値ディスカウント（%）</label><input id="riskCut" type="number" min="0" max="100" step="1" value="12"></div>
+      </div>
+      <div class="two-col" style="margin-top:8px;">
+        <div><label>ポイント購入単価（円/pt）</label><input id="buyCost" type="number" min="0" step="0.01" value="1.25"></div>
+        <div><label>他社プログラム基準（円/pt）</label><input id="otherProgVal" type="number" min="0" step="0.01" value="1.1"></div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="calc">総合分析する</button>
+        <button class="alt" id="save">保存</button>
+        <button class="alt" id="reset">初期化</button>
+      </div>
+      <div id="insight" class="card" style="margin-top:8px;padding:10px"></div>
+    </section>
+
+    <section class="card">
+      <h2>2) 総合スコア & KPI</h2>
+      <div id="score"></div>
+      <div id="kpis" class="kpi" style="margin-top:7px"></div>
+      <h3>3) シナリオ比較</h3>
+      <div class="scroll"><table id="scenario"></table></div>
+      <h3>4) 5泊目無料シミュレーション</h3>
+      <div id="fifth" class="muted"></div>
+      <h3>5) 年間運用シミュレーター</h3>
+      <div class="grid">
+        <div><label>年間宿泊数（泊）</label><input id="yearNights" type="number" min="1" value="25"></div>
+        <div><label>ポイント利用比率（%）</label><input id="awardRatio" type="number" min="0" max="100" value="40"></div>
+      </div>
+      <div id="yearly" class="card" style="margin-top:8px;padding:10px"></div>
+    </section>
+  </div>
+
+  <div class="layout">
+    <section class="card">
+      <h2>6) 代替手段比較（現金/ポイント購入/保留）</h2>
+      <div class="scroll"><table id="decisionTable"></table></div>
+      <h3>メモ</h3>
+      <textarea id="memo" placeholder="繁忙期は1.0円/pt以上なら利用、閑散期は現金優先など"></textarea>
+      <div class="actions"><button class="alt" id="copy">結果コピー</button><button class="alt" id="clear">保存削除</button></div>
+    </section>
+    <section class="card">
+      <h2>7) 予約候補トラッカー</h2>
+      <p class="muted">候補ホテルを追加し、円/pt順で並べて意思決定。</p>
+      <div class="grid3">
+        <input id="candName" placeholder="ホテル名">
+        <input id="candCash" type="number" min="0" placeholder="現金円">
+        <input id="candPts" type="number" min="1" placeholder="pt">
+      </div>
+      <div class="actions"><button class="alt" id="addCandidate">候補を追加</button></div>
+      <div class="scroll"><table id="candidateTable"></table></div>
+    </section>
+  </div>
+</div>
+<script>
+const yen=n=>new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n);
+const num=(n,d=2)=>Number(n).toFixed(d);
+const g=id=>document.getElementById(id);
+const val=id=>Number(g(id).value);
+const judge=(v,t)=>v>=t*1.2?['good','非常にお得']:v>=t?['warn','許容範囲']:['bad','割高'];
+
+function analyze(){
+  const hotel=g('hotel').value.trim()||'未入力ホテル';
+  const nights=val('nights'),cash=val('cash'),pts=val('pts'),awardFee=val('awardFee'),cashExtra=val('cashExtra');
+  const earnRate=val('earnRate'),myVal=val('myVal'),fx=val('fx'),altVal=val('altVal'),target=val('target'),riskCut=val('riskCut')/100;
+  const buyCost=val('buyCost'),otherProgVal=val('otherProgVal');
+  const arr=[nights,cash,pts,awardFee,cashExtra,earnRate,myVal,fx,altVal,target,buyCost,otherProgVal];
+  if(arr.some(v=>!Number.isFinite(v)||v<0)||pts<=0||nights<=0||fx<=0){g('score').innerHTML='<p class="bad">入力値エラー</p>';return;}
+
+  const cashTotal=cash+cashExtra, awardTotal=awardFee, avoided=cashTotal-awardTotal;
+  const cpp=avoided/pts;
+  const earnPts=(cash/fx)*earnRate;
+  const earnValue=earnPts*myVal;
+  const effectiveCash=cashTotal-earnValue;
+  const oppGap=avoided-(pts*altVal);
+  const riskAdjustedCpp=cpp*(1-riskCut);
+  const breakevenPts=avoided/Math.max(myVal,.00001);
+  const pointsToBuyCost=pts*buyCost;
+  const [cls,label]=judge(cpp,target);
+
+  const benchmarkScore=(cpp/Math.max(target,.0001))*40+(riskAdjustedCpp/Math.max(target,.0001))*25+((oppGap>0)?20:8)+((cpp>otherProgVal)?15:7);
+  const totalScore=Math.max(0,Math.min(100,benchmarkScore));
+
+  g('score').innerHTML=`<div class="score ${cls}">${label} / 総合スコア: ${num(totalScore,1)}点</div><p class="muted">${hotel}・${nights}泊の診断</p>`;
+  g('kpis').innerHTML=`
+    <div><div class='l'>実質価値</div><div class='v'>${num(cpp,3)} 円/pt</div></div>
+    <div><div class='l'>リスク調整後価値</div><div class='v'>${num(riskAdjustedCpp,3)} 円/pt</div></div>
+    <div><div class='l'>回避現金額</div><div class='v'>${yen(avoided)}</div></div>
+    <div><div class='l'>現金泊獲得見込</div><div class='v'>${num(earnPts,0)} pt</div></div>
+    <div><div class='l'>獲得価値</div><div class='v'>${yen(earnValue)}</div></div>
+    <div><div class='l'>実質現金コスト</div><div class='v'>${yen(effectiveCash)}</div></div>
+    <div><div class='l'>損益分岐pt</div><div class='v'>${num(breakevenPts,0)} pt</div></div>
+    <div><div class='l'>代替利用差額</div><div class='v'>${yen(oppGap)}</div></div>
+    <div><div class='l'>全pt購入時コスト</div><div class='v'>${yen(pointsToBuyCost)}</div></div>`;
+
+  renderScenario(avoided,pts,target,myVal,buyCost);
+  renderFifthNight(cashTotal,pts,nights,target);
+  renderYearly(cpp,pts,cashTotal);
+  renderDecision(cashTotal,awardTotal,pointsToBuyCost,effectiveCash,cpp,target);
+
+  g('insight').innerHTML=`<ul>
+    <li>${cpp>=target?'目標価値以上なのでポイント利用優位。':'目標価値未満。現金/別日程比較推奨。'}</li>
+    <li>${oppGap>=0?'代替用途より宿泊利用が有利。':'代替用途の方が期待値が高い可能性。'}</li>
+    <li>${riskAdjustedCpp>=target?'改悪リスク考慮後も許容。':'将来価値を控えめに見るなら慎重に判断。'}</li>
+    <li>${pointsToBuyCost<cashTotal?'不足分購入してでもポイント泊が成立する余地あり。':'購入前提は割高化しやすい。'}</li>
+  </ul>`;
+
+  localStorage.setItem('bonvoy_last',JSON.stringify({hotel,cpp,score:totalScore,cashTotal,pts,date:new Date().toISOString()}));
+}
+
+function renderScenario(avoided,pts,target,myVal,buyCost){
+  const rows=[0.7,0.8,0.9,1,1.1,1.2,1.3].map(r=>{const p=Math.round(pts*r),v=avoided/p,[,l]=judge(v,target);const m=(v-myVal)*p;return `<tr><td>${Math.round(r*100)}%</td><td>${p.toLocaleString()}</td><td>${num(v,3)}</td><td>${l}</td><td>${yen(m)}</td><td>${yen(p*buyCost)}</td></tr>`}).join('');
+  g('scenario').innerHTML=`<tr><th>必要pt比</th><th>必要pt</th><th>円/pt</th><th>判定</th><th>自己価値差額</th><th>全pt購入費</th></tr>${rows}`;
+}
+
+function renderFifthNight(cashTotal,pts,nights,target){
+  if(nights<5){g('fifth').textContent='5泊未満のため適用なし（5泊以上で比較）。';return;}
+  const perNightPts=pts/nights; const paidNights=Math.ceil(nights*0.8); const ptsWithBenefit=Math.round(perNightPts*paidNights);
+  const cppWithBenefit=cashTotal/ptsWithBenefit; const [c,l]=judge(cppWithBenefit,target);
+  g('fifth').innerHTML=`通常必要pt: ${pts.toLocaleString()} → 5泊目無料想定: <strong>${ptsWithBenefit.toLocaleString()} pt</strong> / 価値: <span class="${c}">${num(cppWithBenefit,3)} 円/pt (${l})</span>`;
+}
+
+function renderYearly(cpp,pts,cashTotal){
+  const yearN=val('yearNights'),ratio=val('awardRatio')/100;
+  const yearlyPts=pts*Math.max(yearN,1)/Math.max(val('nights'),1)*ratio;
+  const yearlyCashAvoided=cashTotal*Math.max(yearN,1)/Math.max(val('nights'),1)*ratio;
+  g('yearly').innerHTML=`年間ポイント消費見込: <strong>${Math.round(yearlyPts).toLocaleString()} pt</strong><br>年間現金回避見込: <strong>${yen(yearlyCashAvoided)}</strong><br>年間平均価値: <strong>${num(cpp,3)} 円/pt</strong>`;
+}
+
+function renderDecision(cashTotal,awardTotal,buyCostTotal,effectiveCash,cpp,target){
+  const r=[
+    ['現金払い',yen(cashTotal),'ポイント温存・獲得あり'],
+    ['ポイント利用',yen(awardTotal),`${num(cpp,3)} 円/pt`],
+    ['ポイント全購入で利用',yen(buyCostTotal),buyCostTotal<cashTotal?'理論上は成立':'割高リスク高'],
+    ['実質現金コスト(獲得価値控除)',yen(effectiveCash),effectiveCash<awardTotal?'現金優位の可能性':'ポイント優位維持']
+  ];
+  g('decisionTable').innerHTML=`<tr><th>選択肢</th><th>総コスト</th><th>コメント</th></tr>${r.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td></tr>`).join('')}<tr><td>最終判定閾値</td><td>${target} 円/pt</td><td>${cpp>=target?'達成':'未達'}</td></tr>`;
+}
+
+function saveAll(){
+  const ids=['hotel','nights','cash','pts','awardFee','cashExtra','earnRate','myVal','fx','altVal','target','riskCut','buyCost','otherProgVal','yearNights','awardRatio','memo'];
+  const data={}; ids.forEach(id=>data[id]=g(id).value); localStorage.setItem('bonvoy_inputs',JSON.stringify(data)); alert('保存しました');
+}
+function loadAll(){const raw=localStorage.getItem('bonvoy_inputs'); if(!raw) return; const d=JSON.parse(raw); Object.entries(d).forEach(([k,v])=>{if(g(k)) g(k).value=v;});}
+function copyRes(){const t=`Bonvoy戦略ラボ\n${g('score').innerText}\n${g('kpis').innerText}\n${g('insight').innerText}`; navigator.clipboard.writeText(t).then(()=>alert('コピー完了')).catch(()=>alert('コピー失敗'));}
+function clearSaved(){localStorage.removeItem('bonvoy_inputs');localStorage.removeItem('bonvoy_last');localStorage.removeItem('bonvoy_candidates');alert('削除しました');}
+function reset(){localStorage.removeItem('bonvoy_inputs');location.reload();}
+
+function addCandidate(){
+  const name=g('candName').value.trim(); const cash=Number(g('candCash').value), pts=Number(g('candPts').value);
+  if(!name||!Number.isFinite(cash)||!Number.isFinite(pts)||pts<=0){alert('候補入力を確認してください');return;}
+  const cpp=cash/pts; const arr=JSON.parse(localStorage.getItem('bonvoy_candidates')||'[]');
+  arr.push({name,cash,pts,cpp,ts:Date.now()}); localStorage.setItem('bonvoy_candidates',JSON.stringify(arr)); renderCandidates();
+  g('candName').value=''; g('candCash').value=''; g('candPts').value='';
+}
+function renderCandidates(){
+  const arr=JSON.parse(localStorage.getItem('bonvoy_candidates')||'[]').sort((a,b)=>b.cpp-a.cpp);
+  g('candidateTable').innerHTML=`<tr><th>#</th><th>ホテル</th><th>現金</th><th>pt</th><th>円/pt</th></tr>${arr.map((x,i)=>`<tr><td>${i+1}</td><td>${x.name}</td><td>${yen(x.cash)}</td><td>${x.pts.toLocaleString()}</td><td>${num(x.cpp,3)}</td></tr>`).join('')||'<tr><td colspan="5">候補なし</td></tr>'}`;
+}
+
+g('calc').addEventListener('click',analyze); g('save').addEventListener('click',saveAll); g('copy').addEventListener('click',copyRes);
+g('clear').addEventListener('click',clearSaved); g('reset').addEventListener('click',reset); g('addCandidate').addEventListener('click',addCandidate);
+['yearNights','awardRatio'].forEach(id=>g(id).addEventListener('input',analyze));
+loadAll(); analyze(); renderCandidates();
+</script>
+</body></html>
