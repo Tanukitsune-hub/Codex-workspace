@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bonvoyポイント活用ダッシュボード</title>
+  <style>
+    :root {
+      --bg: #f6f8fc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --line: #dbe3ef;
+      --brand: #0f766e;
+      --brand-dark: #115e59;
+      --good: #047857;
+      --warn: #b45309;
+      --bad: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; }
+    .container { max-width: 1100px; margin: 22px auto; padding: 0 16px; }
+    .hero, .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06); }
+    h1 { margin: 0 0 8px; font-size: 1.6rem; }
+    .muted { color: var(--muted); font-size: .93rem; }
+    .layout { display: grid; grid-template-columns: 1.1fr .9fr; gap: 14px; margin-top: 14px; }
+    .section-title { margin: 6px 0 10px; font-size: 1.05rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    label { font-weight: 700; display: block; margin-bottom: 6px; font-size: .92rem; }
+    input, select, button, textarea { font: inherit; }
+    input, select, textarea {
+      width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 9px 11px; background: #fff;
+    }
+    textarea { resize: vertical; min-height: 74px; }
+    .span-2 { grid-column: span 2; }
+    .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    button { border: none; border-radius: 9px; padding: 10px 12px; font-weight: 700; cursor: pointer; }
+    .primary { background: var(--brand); color: #fff; }
+    .primary:hover { background: var(--brand-dark); }
+    .secondary { background: #e2e8f0; color: #0f172a; }
+    .result-box { background: #f8fafc; border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 10px; }
+    .score { font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; }
+    .good { color: var(--good); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .kpi { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .kpi > div { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 9px; }
+    .kpi .label { color: var(--muted); font-size: .8rem; }
+    .kpi .value { font-weight: 700; font-size: 1.02rem; margin-top: 2px; }
+    .list { margin: 8px 0 0; padding-left: 18px; }
+    .list li { margin-bottom: 6px; }
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { border-bottom: 1px solid var(--line); padding: 7px 6px; text-align: left; white-space: nowrap; }
+    th { background: #f1f5f9; }
+    .footer-note { margin-top: 12px; font-size: .82rem; color: var(--muted); }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .grid, .grid-3 { grid-template-columns: 1fr; }
+      .span-2 { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <h1>Bonvoyポイント活用ダッシュボード</h1>
+      <p class="muted">宿泊のポイント利用価値を、<strong>実質還元率・基準比較・獲得機会損失</strong>まで含めて診断。公開向けの実用機能を1画面にまとめました。</p>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <h2 class="section-title">① 宿泊条件を入力</h2>
+        <div class="grid">
+          <div>
+            <label for="hotelName">ホテル名（任意）</label>
+            <input id="hotelName" placeholder="例: 東京マリオットホテル" />
+          </div>
+          <div>
+            <label for="stayNights">泊数</label>
+            <input id="stayNights" type="number" min="1" step="1" value="1" />
+          </div>
+          <div>
+            <label for="cashRate">現金合計料金（税サ込 / 円）</label>
+            <input id="cashRate" type="number" min="0" step="1" value="45000" />
+          </div>
+          <div>
+            <label for="points">必要ポイント（合計pt）</label>
+            <input id="points" type="number" min="1" step="1" value="50000" />
+          </div>
+          <div>
+            <label for="awardFees">ポイント泊時の追加支払い（円）</label>
+            <input id="awardFees" type="number" min="0" step="1" value="0" />
+          </div>
+          <div>
+            <label for="resortFeesCash">現金泊でも払う追加費用（円）</label>
+            <input id="resortFeesCash" type="number" min="0" step="1" value="0" />
+          </div>
+        </div>
+
+        <h2 class="section-title">② 会員前提・比較設定</h2>
+        <div class="grid-3">
+          <div>
+            <label for="earnRate">現金泊の獲得率（pt/US$）</label>
+            <input id="earnRate" type="number" min="0" step="0.1" value="10" />
+          </div>
+          <div>
+            <label for="pointVal">自己評価ポイント価値（円/pt）</label>
+            <input id="pointVal" type="number" min="0" step="0.01" value="0.9" />
+          </div>
+          <div>
+            <label for="usdJpy">為替（USD/JPY）</label>
+            <input id="usdJpy" type="number" min="1" step="0.1" value="155" />
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:10px;">
+          <div>
+            <label for="altUse">代替利用価値（円/pt）</label>
+            <input id="altUse" type="number" min="0" step="0.01" value="0.8" />
+          </div>
+          <div>
+            <label for="targetBand">お得判定の目標値（円/pt）</label>
+            <input id="targetBand" type="number" min="0" step="0.01" value="0.9" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="calcBtn">診断する</button>
+          <button class="secondary" id="saveBtn">今回の条件を保存</button>
+          <button class="secondary" id="resetBtn">入力を初期化</button>
+        </div>
+
+        <div id="advice" class="result-box"></div>
+      </section>
+
+      <section class="panel">
+        <h2 class="section-title">③ 診断結果</h2>
+        <div id="summary" class="result-box"></div>
+
+        <h2 class="section-title">④ シナリオ比較（必要ポイントが変わる場合）</h2>
+        <div class="result-box">
+          <p class="muted">同一現金額で、必要ポイントが±20%変動したときの価値。</p>
+          <div class="table-wrap"><table id="scenarioTable"></table></div>
+        </div>
+
+        <h2 class="section-title">⑤ 保存した比較メモ</h2>
+        <div class="result-box">
+          <textarea id="memo" placeholder="例: GWは現金高騰で1.15円/pt、平日は0.72円/pt"></textarea>
+          <div class="actions">
+            <button class="secondary" id="copyBtn">結果をコピー</button>
+            <button class="secondary" id="clearSavedBtn">保存データ削除</button>
+          </div>
+          <p class="footer-note">※ ブラウザのlocalStorageに保存します（この端末内のみ）。</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const fmtYen = (n) => new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 }).format(n);
+    const fmtNum = (n, d = 2) => Number(n).toFixed(d);
+
+    function getInput(id) { return Number(document.getElementById(id).value); }
+
+    function judge(yenPerPt, target) {
+      if (yenPerPt >= target * 1.2) return { cls: 'good', label: 'かなりお得（優先してポイント利用候補）' };
+      if (yenPerPt >= target) return { cls: 'warn', label: '悪くない（状況次第でポイント利用）' };
+      return { cls: 'bad', label: '割高気味（現金/他用途も検討）' };
+    }
+
+    function calc() {
+      const hotelName = document.getElementById('hotelName').value.trim() || '（ホテル名未入力）';
+      const nights = getInput('stayNights');
+      const cashRate = getInput('cashRate');
+      const points = getInput('points');
+      const awardFees = getInput('awardFees');
+      const resortFeesCash = getInput('resortFeesCash');
+      const earnRate = getInput('earnRate');
+      const pointVal = getInput('pointVal');
+      const usdJpy = getInput('usdJpy');
+      const altUse = getInput('altUse');
+      const targetBand = getInput('targetBand');
+
+      const summary = document.getElementById('summary');
+      const advice = document.getElementById('advice');
+
+      const values = [nights, cashRate, points, awardFees, resortFeesCash, earnRate, pointVal, usdJpy, altUse, targetBand];
+      if (values.some(v => !Number.isFinite(v) || v < 0) || points <= 0 || nights <= 0 || usdJpy <= 0) {
+        summary.innerHTML = '<p class="bad">入力値に不正があります。0以上の数値を確認してください。</p>';
+        advice.innerHTML = '<p class="bad">再計算できませんでした。</p>';
+        return;
+      }
+
+      const netCashCost = cashRate + resortFeesCash;
+      const netAwardCost = awardFees;
+      const avoidedCash = netCashCost - netAwardCost;
+      const yenPerPt = avoidedCash / points;
+
+      const earnedPointsIfCash = (cashRate / usdJpy) * earnRate;
+      const earnedPointValueYen = earnedPointsIfCash * pointVal;
+      const effectiveCashCost = netCashCost - earnedPointValueYen;
+      const breakEvenPoints = avoidedCash / Math.max(pointVal, 0.000001);
+      const altOpportunityCost = points * altUse;
+      const opportunityGap = avoidedCash - altOpportunityCost;
+
+      const decision = judge(yenPerPt, targetBand);
+
+      summary.innerHTML = `
+        <div class="score ${decision.cls}">${decision.label}</div>
+        <div class="kpi">
+          <div><div class="label">実質価値</div><div class="value">${fmtNum(yenPerPt, 3)} 円/pt</div></div>
+          <div><div class="label">現金払い回避額</div><div class="value">${fmtYen(avoidedCash)}</div></div>
+          <div><div class="label">現金泊時の獲得見込み</div><div class="value">${fmtNum(earnedPointsIfCash, 0)} pt</div></div>
+          <div><div class="label">獲得ptの推定価値</div><div class="value">${fmtYen(earnedPointValueYen)}</div></div>
+          <div><div class="label">価値の損益分岐ポイント</div><div class="value">${fmtNum(breakEvenPoints, 0)} pt</div></div>
+          <div><div class="label">代替利用との差額</div><div class="value">${fmtYen(opportunityGap)}</div></div>
+        </div>
+      `;
+
+      const recommendation = [];
+      if (yenPerPt > targetBand) recommendation.push('あなたの目標価値を上回るため、ポイント利用の合理性が高いです。');
+      else recommendation.push('目標価値を下回るため、現金泊や別日程比較の余地があります。');
+
+      if (effectiveCashCost < awardFees) recommendation.push('現金泊の実質コストが低く見えるため、現金払い再検討も有効です。');
+      else recommendation.push('獲得ポイント価値を考慮しても、ポイント利用の魅力は維持されています。');
+
+      if (opportunityGap >= 0) recommendation.push('代替用途より今回利用の方が期待価値は高めです。');
+      else recommendation.push('代替用途（航空移行等）を優先した方が期待値は高い可能性があります。');
+
+      advice.innerHTML = `
+        <p><strong>${hotelName}</strong> / ${nights}泊 の診断コメント</p>
+        <ul class="list">${recommendation.map(t => `<li>${t}</li>`).join('')}</ul>
+      `;
+
+      renderScenarioTable(avoidedCash, points, targetBand);
+      saveLastResult({ hotelName, nights, yenPerPt, avoidedCash, points, decision: decision.label });
+    }
+
+    function renderScenarioTable(avoidedCash, basePoints, targetBand) {
+      const table = document.getElementById('scenarioTable');
+      const ratios = [0.8, 0.9, 1.0, 1.1, 1.2];
+      table.innerHTML = `
+        <tr><th>必要ポイント比</th><th>必要ポイント</th><th>円/pt</th><th>判定</th></tr>
+        ${ratios.map(r => {
+          const pts = Math.round(basePoints * r);
+          const v = avoidedCash / pts;
+          const j = judge(v, targetBand).label;
+          return `<tr><td>${Math.round(r * 100)}%</td><td>${pts.toLocaleString()} pt</td><td>${fmtNum(v, 3)}</td><td>${j}</td></tr>`;
+        }).join('')}
+      `;
+    }
+
+    function saveLastResult(data) {
+      localStorage.setItem('bonvoy_last_result', JSON.stringify(data));
+    }
+
+    function loadSaved() {
+      const raw = localStorage.getItem('bonvoy_inputs');
+      if (raw) {
+        const inputs = JSON.parse(raw);
+        Object.entries(inputs).forEach(([id, val]) => {
+          const el = document.getElementById(id);
+          if (el) el.value = val;
+        });
+      }
+      const memo = localStorage.getItem('bonvoy_memo');
+      if (memo) document.getElementById('memo').value = memo;
+    }
+
+    function saveInputs() {
+      const ids = ['hotelName', 'stayNights', 'cashRate', 'points', 'awardFees', 'resortFeesCash', 'earnRate', 'pointVal', 'usdJpy', 'altUse', 'targetBand'];
+      const data = {};
+      ids.forEach(id => data[id] = document.getElementById(id).value);
+      localStorage.setItem('bonvoy_inputs', JSON.stringify(data));
+      localStorage.setItem('bonvoy_memo', document.getElementById('memo').value);
+      alert('入力条件とメモを保存しました。');
+    }
+
+    function clearSaved() {
+      localStorage.removeItem('bonvoy_inputs');
+      localStorage.removeItem('bonvoy_memo');
+      localStorage.removeItem('bonvoy_last_result');
+      alert('保存データを削除しました。');
+    }
+
+    function copyResult() {
+      const summaryText = document.getElementById('summary').innerText;
+      const adviceText = document.getElementById('advice').innerText;
+      const text = `Bonvoy診断結果\n${summaryText}\n\n${adviceText}`;
+      navigator.clipboard.writeText(text)
+        .then(() => alert('診断結果をコピーしました。'))
+        .catch(() => alert('コピーに失敗しました。ブラウザ設定をご確認ください。'));
+    }
+
+    function resetInputs() {
+      localStorage.removeItem('bonvoy_inputs');
+      location.reload();
+    }
+
+    document.getElementById('calcBtn').addEventListener('click', calc);
+    document.getElementById('saveBtn').addEventListener('click', saveInputs);
+    document.getElementById('clearSavedBtn').addEventListener('click', clearSaved);
+    document.getElementById('copyBtn').addEventListener('click', copyResult);
+    document.getElementById('resetBtn').addEventListener('click', resetInputs);
+
+    loadSaved();
+    calc();
+  </script>
+</body>
+</html>
